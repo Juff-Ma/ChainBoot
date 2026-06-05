@@ -1,6 +1,6 @@
 GO := go
 
-.PHONY: all default clean bindir
+.PHONY: all default clean bindir urootclean kernelclean
 
 default: all
 
@@ -20,14 +20,17 @@ bin/initramfs.cpio.zst: bin/initramfs.cpio
 	@echo "Compressing to $@"
 	@zstd -f -19 --long=30 --check $< -o $@
 
-bin/chainboot.efi: bindir bin/initramfs.cpio.zst
+bin/chainboot.efi: bin/initramfs.cpio.zst
 	@echo "Building $@"
 	touch $@
 
-clean: urootclean
+clean: urootclean kernelclean
 	rm -f bin/initramfs.cpio
 	rm -f bin/initramfs.cpio.zst
 	rm -f bin/chainboot.efi
+
+kernelclean:
+	@$(MAKE) -C kernel mrproper
 
 urootclean:
 	cd uroot && $(GO) clean
