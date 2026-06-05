@@ -1,0 +1,7 @@
+[submodule "uroot"]
+	path = uroot
+	url = https://github.com/u-root/u-root
+[submodule "kernel"]
+	path = kernel
+	url = https://github.com/gregkh/linux.git
+	branch = linux-rolling-stable
