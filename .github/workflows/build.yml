@@ -1,0 +1,38 @@
+# Build the Project
+
+name: Build on push
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  release:
+    types: [ "published" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --depth=1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ncurses-dev gawk flex xz-utils zstd bc bison openssl libssl-dev libelf-dev libudev-dev libpci-dev libiberty-dev autoconf pahole
+      - name: Build ChainBoot
+        run: make -j$(nproc) all
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: chainboot
+          path: bin/chainboot.efi
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: bin/chainboot.efi
