@@ -16,26 +16,21 @@ So how can we solve this problem? We just load LinuxBoot, a firmware whose drive
 
 ## How can I use ChainBoot?
 
-This depends on how your system boots. In all cases you need to grab `chainboot.efi` from a release or build it yourself.
+This depends on how your system boots. In all cases you need to grab `chainboot.efi` or `chainboot.iso` from a release or build it yourself.
 
 ### My system has a modern UEFI (easy)
 
-Easy! Just put chainboot on a FAT formattet media/any media your integrated firmware will boot from and add a boot entry using your UEFI boot manager.
+Just put chainboot on a FAT formattet media/any media your integrated firmware will boot from and add a boot entry using your UEFI boot manager. This allows it to be directly loaded without any man in the middle.
 
 If your UEFI doesn't have a boot manager that can work with files (many consumer boards) you need to rename the file and put it in the following path: `\EFI\BOOT\BOOTX64.EFI`, this way it will be autodetected.
 
-### My system has a legacy (32bit) EFI or only BIOS (reasonable)
+Of course the Limine based image also works if you don't want to manually create boot files. See next step.
 
-In this case things are a bit more complex. Since ChainBoot is a Linux kernel you need to somehow boot it using a bootloader. For example using SysLinux on BIOS you could use a config file like this:
+### My system has a legacy (32bit) EFI or only BIOS (also easy)
 
-```ini
-DEFAULT chainboot
-LABEL chainboot
-    SAY Booting...
-    KERNEL /chainboot.efi
-```
+In this case things are a bit more complex. Since ChainBoot is a Linux kernel you need to somehow boot it using a bootloader.
 
-On 32bit EFI you need a bootloader that supports the Linux EFI handoff protocol.
+Since version 1.1 ChainBoot includes a fully premade image for this usecase. The iso image can be burnt to a DVD or flashed to a USB/Hard drive. It is powered by [Limine](https://github.com/Limine-Bootloader/Limine) and works both in BIOS and UEFI mode.
 
 Just a note: even though ChainBoot is more or less a replacement for systems like [DUET](https://github.com/tianocore/tianocore.github.io/wiki/DuetPkg), there's also the option of adding a UEFI environment using it. However this doesn't make much sense.
 
@@ -85,7 +80,7 @@ First you need to install dependencies. That means Go (v1.22+ recommended, yes, 
 
 In addition you need the kernel dependencies. For Ubuntu this currently means:
 
-`apt install gcc git build-essential ncurses-dev gawk flex xz-utils zstd bc bison openssl libssl-dev libelf-dev libudev-dev libpci-dev libiberty-dev autoconf pahole`
+`apt install gcc git build-essential ncurses-dev gawk flex xz-utils zstd bc bison openssl libssl-dev libelf-dev libudev-dev libpci-dev libiberty-dev autoconf pahole xorriso`
 
 Now you need to get the ChainBoot source, we use `git` for that:
 
@@ -95,7 +90,7 @@ Then you can just go ahead and run the following in the ChainBoot directory:
 
 `make -j$(nproc)`
 
-This will build the u-root and the Linux kernel. If everything worked you should find a `chainboot.efi` in the `bin` folder. Building is only supported on Linux. Theoretically it could work on other Unix OS (including MinGW) as well but that's not tested. If running Windows you can use WSL as an easy workaround.
+This will build the u-root and the Linux kernel. If everything worked you should find a `chainboot.efi` and a `chainboot.iso` in the `bin` folder. Building is only supported on Linux. Theoretically it could work on other Unix OS (including MinGW) as well but that's not tested. If running Windows you can use WSL as an easy workaround.
 
 If you want to test ChainBoot Qemu is the easiest way to do so:
 

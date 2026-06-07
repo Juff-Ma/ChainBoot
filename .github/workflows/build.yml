@@ -23,16 +23,20 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential ncurses-dev gawk flex xz-utils zstd bc bison openssl libssl-dev libelf-dev libudev-dev libpci-dev libiberty-dev autoconf pahole
+          sudo apt-get install -y build-essential ncurses-dev gawk flex xz-utils zstd bc bison openssl libssl-dev libelf-dev libudev-dev libpci-dev libiberty-dev autoconf pahole xorriso
       - name: Build ChainBoot
         run: make -j$(nproc) all
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: chainboot
-          path: bin/chainboot.efi
+          path: |
+            bin/chainboot.efi
+            bin/chainboot.iso
       - name: Upload release asset
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v3
         with:
-          files: bin/chainboot.efi
+          files: |
+            bin/chainboot.efi
+            bin/chainboot.iso
