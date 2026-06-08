@@ -95,3 +95,20 @@ This will build the u-root and the Linux kernel. If everything worked you should
 If you want to test ChainBoot Qemu is the easiest way to do so:
 
 `qemu-system-x86_64 -m 4G -smp 2 -kernel chainboot.efi -cdrom <path to a Linux iso>`
+
+## Known Issues
+
+### Linux KERNEL only
+
+Anything that's not a driver in the Linux kernel won't boot. LVM for example is a userspace configuration.
+ChainBoot includes all necessary drivers for LVM to work but without the userspace utilities it can't recognize a LVM partition.
+
+This means that systems like Proxmox which utilize LVM cannot boot. (For Proxmox you can go around this by using BTRFS as a filesystem, since it doesn't require LVM and therefore can be booted)
+
+Same goes for 3rd party kernel modules. ZFS is such an example since it requires the OpenZFS module which needs to be loaded via the initrd.
+
+### Only basic bootloader support
+
+ChainBoot pulls its config from your bootloader (e.g. GRUB) for its own boot menu. Without this you'd need to manually select the kernel path, initrd and cmd line each boot which isn't feasable.
+
+The GRUB parser in LinuxBoot is very basic though and will choke on more complex GRUB configuration files. This isn't a problem for 90% of distros but notably some RedHat family LiveCDs choke on this (the installed OS and netinstall like Fedora Everything work fine).
