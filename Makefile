@@ -1,6 +1,10 @@
-GO := go
+CHAINBOOT_LIMINE_VERSION := 12.3.3
+CHAINBOOT_LIMINE_URL := https://github.com/Limine-Bootloader/Limine/releases/download/v$(CHAINBOOT_LIMINE_VERSION)/limine-binary.tar.xz
 
-.PHONY: all boot image isoroot default clean bindir urootclean kernelclean isoclean
+CHAINBOOT_BUILDROOT_VERSION := 2026.05
+CHAINBOOT_BUILDROOT_URL := https://buildroot.org/downloads/buildroot-$(CHAINBOOT_BUILDROOT_VERSION).tar.xz
+
+.PHONY: all boot image isoroot default clean isoclean buildrootclean bindir
 
 default: all
 
@@ -10,6 +14,17 @@ all: boot image
 boot: bin/chainboot.efi
 
 image: bin/chainboot.iso
+
+bindir:
+	@mkdir -p bin
+
+bin/limine.tar.xz: bindir
+	@echo "Downloading Limine binaries"
+	@wget -O $@ $(CHAINBOOT_LIMINE_URL)
+
+bin/limine-binary/limine: bin/limine.tar.xz
+	tar -xf bin/limine.tar.xz -C bin
+	@$(MAKE) -C bin/limine-binary limine
 
 bin/chainboot.iso: bin/limine-binary/limine isoroot
 	@echo "Creating ISO image"
@@ -39,57 +54,29 @@ isoroot: bin/chainboot.efi
 	cp bin/limine-binary/BOOTX64.EFI bin/isoroot/EFI/BOOT/BOOTX64.EFI
 	cp bin/limine-binary/BOOTIA32.EFI bin/isoroot/EFI/BOOT/BOOTIA32.EFI
 
-
-bin/limine-binary/limine: bin/limine.tar.xz
-	tar -xf bin/limine.tar.xz -C bin
-	@$(MAKE) -C bin/limine-binary limine
-
-bin/limine.tar.xz: bindir
-	@echo "Downloading Limine binaries"
-	@wget -O bin/limine.tar.xz https://github.com/Limine-Bootloader/Limine/releases/download/v12.3.3/limine-binary.tar.xz
-
-bindir:
-	@mkdir -p bin
-
-uroot/u-root:
-	cd uroot && $(GO) build .
-
-bin/initramfs.cpio: bindir uroot/u-root
-	@echo "Building $@ from u-root"
-	cd uroot && GOOS=linux GOARCH=amd64 ./u-root -o ../$@ -build=bb -uinitcmd="boot" core ./cmds/boot/*
-
-bin/initramfs.cpio.zst: bin/initramfs.cpio
-	@echo "Compressing to $@"
-	@zstd -f -19 --long=30 --check $< -o $@
-
-kernel/.config: kernel.config
-	@echo "Configuring kernel"
-	cp kernel.config kernel/arch/x86/configs/chainboot_defconfig
-	@$(MAKE) -C kernel chainboot_defconfig
-	@$(MAKE) -C kernel olddefconfig
-
-kernel/arch/x86/boot/bzImage: bin/initramfs.cpio.zst kernel/.config
-	@echo "Building kernel"
-	@$(MAKE) -C kernel bzImage
-
-bin/chainboot.efi: kernel/arch/x86/boot/bzImage
+bin/chainboot.efi:
 	@echo "Copying kernel image to EFI boot file"
-	cp kernel/arch/x86/boot/bzImage bin/chainboot.efi
+	false
 
-clean: urootclean kernelclean bindir isoclean
+bin/buildroot.tar.xz: bindir
+	@echo "Downloading Buildroot"
+	@wget -O $@ $(CHAINBOOT_BUILDROOT_URL)
+
+bin/buildroot/Makefile: bin/buildroot.tar.xz
+	tar -xf bin/buildroot.tar.xz -C bin
+	mv bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) bin/buildroot
+
+clean: isoclean buildrootclean
 	rm -f bin/initramfs.cpio
 	rm -f bin/initramfs.cpio.zst
 	rm -f bin/chainboot.efi
 
-isoclean:
+isoclean: bindir
 	rm -f bin/limine.tar.xz
 	rm -rf bin/limine-binary
 	rm -rf bin/isoroot
 	rm -f bin/chainboot.iso
 
-kernelclean:
-	rm -f kernel/arch/x86/configs/chainboot_defconfig
-	@$(MAKE) -C kernel mrproper
-
-urootclean:
-	cd uroot && $(GO) clean
+buildrootclean: bindir
+	rm -f bin/buildroot.tar.xz
+	rm -rf bin/buildroot
