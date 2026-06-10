@@ -58,13 +58,15 @@ bin/chainboot.efi:
 	@echo "Copying kernel image to EFI boot file"
 	false
 
+BR2_EXTERNAL := $(CURDIR)/buildroot
+
 bin/buildroot.tar.xz: bindir
 	@echo "Downloading Buildroot"
 	@wget -O $@ $(CHAINBOOT_BUILDROOT_URL)
 
 bin/buildroot/Makefile: bin/buildroot.tar.xz
 	tar -xf bin/buildroot.tar.xz -C bin
-	mv bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) bin/buildroot
+	mv -f bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) bin/buildroot
 
 clean: isoclean buildrootclean
 	rm -f bin/initramfs.cpio
@@ -79,4 +81,6 @@ isoclean: bindir
 
 buildrootclean: bindir
 	rm -f bin/buildroot.tar.xz
+
+	@test -f bin/buildroot/Makefile && $(MAKE) -C bin/buildroot distclean || true
 	rm -rf bin/buildroot
