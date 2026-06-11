@@ -1,0 +1,22 @@
+diff --git a/discover/boot.c b/discover/boot.c
+index 00507b7..ca59c09 100644
+--- a/discover/boot.c
++++ b/discover/boot.c
+@@ -61,7 +61,7 @@ static void __attribute__((format(__printf__, 4, 5))) update_status(
+  */
+ static int kexec_load(struct boot_task *boot_task)
+ {
+-	const char *load_args[] = {"-l", "-s"};
++	const char *load_args[] = {"-l", "-c"};
+ 	const struct system_info *sysinfo;
+ 	struct process *process;
+ 	char *s_initrd = NULL;
+@@ -148,7 +148,7 @@ static int kexec_load(struct boot_task *boot_task)
+ 	err_buf = NULL;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(load_args); i++) {
+-		/* our first argument is the action: -s or -l */
++		/* our first argument is the action: -c or -l */
+ 		argv[1] = load_args[i];
+ 
+ 		/* if we're enforcing, we know a -l load will fail; skip */

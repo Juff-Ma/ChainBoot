@@ -33,7 +33,7 @@ bin/limine-binary/limine: bin/limine.tar.xz
 
 bin/chainboot.iso: bin/limine-binary/limine isoroot
 	@echo "Creating ISO image"
-	@xorriso -as mkisofs -R -r -J -b boot/limine-bios-cd.bin \
+	@bin/buildroot/host/bin/xorriso -as mkisofs -R -r -J -b boot/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \
 		-apm-block-size 2048 --efi-boot boot/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
@@ -59,9 +59,11 @@ isoroot: bin/chainboot.efi
 	cp bin/limine-binary/BOOTX64.EFI bin/isoroot/EFI/BOOT/BOOTX64.EFI
 	cp bin/limine-binary/BOOTIA32.EFI bin/isoroot/EFI/BOOT/BOOTIA32.EFI
 
-bin/chainboot.efi:
+bin/chainboot.efi: buildroot
 	@echo "Copying kernel image to EFI boot file"
-	false
+	cp bin/buildroot/images/rootfs.cpio bin/initramfs.cpio
+	cp bin/buildroot/images/rootfs.cpio.zst bin/initramfs.cpio.zst
+	cp bin/buildroot/images/bzImage bin/chainboot.efi
 
 bin/buildroot.tar.xz: bindir
 	@echo "Downloading Buildroot"
@@ -74,11 +76,13 @@ BUILDROOT_ARGS += BR2_JLEVEL=$(JOBS)
 BUILDROOT_ARGS += CCACHE_OPTIONS="--max-size=$(CACHE_SIZE)"
 
 bin/buildroot/Makefile: bin/buildroot.tar.xz
+	@echo "Extracting buildroot"
 	tar -xf bin/buildroot.tar.xz -C bin
 	mkdir -p bin/buildroot
 	mkdir -p bin/cache/ccache
 	mkdir -p bin/cache/downloads
 
+	@echo "Preparing buildroot environment"
 	@$(MAKE) -C bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) \
 		O=$(CURDIR)/bin/buildroot \
 		$(BUILDROOT_ARGS) \
@@ -87,6 +91,7 @@ bin/buildroot/Makefile: bin/buildroot.tar.xz
 .PHONY: buildroottoolchain buildroot
 
 buildroottoolchain: bin/buildroot/Makefile
+	@echo "Building toolchain"
 	@$(MAKE) -C bin/buildroot \
 		$(BUILDROOT_ARGS) \
 		ccache-options
@@ -96,6 +101,7 @@ buildroottoolchain: bin/buildroot/Makefile
 		toolchain
 
 buildroot: buildroottoolchain
+	@echo "Building system"
 	@$(MAKE) -C bin/buildroot \
 		$(BUILDROOT_ARGS) \
 		all
