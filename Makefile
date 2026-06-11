@@ -1,10 +1,15 @@
-CHAINBOOT_LIMINE_VERSION := 12.3.3
-CHAINBOOT_LIMINE_URL := https://github.com/Limine-Bootloader/Limine/releases/download/v$(CHAINBOOT_LIMINE_VERSION)/limine-binary.tar.xz
+JOBS ?= 1
+MAKEFLAGS += -j$(JOBS)
 
-CHAINBOOT_BUILDROOT_VERSION := 2026.05
-CHAINBOOT_BUILDROOT_URL := https://buildroot.org/downloads/buildroot-$(CHAINBOOT_BUILDROOT_VERSION).tar.xz
+CACHE_SIZE ?= 10G
 
-.PHONY: all boot image isoroot default clean isoclean buildrootclean bindir
+CHAINBOOT_LIMINE_VERSION ?= 12.3.3
+CHAINBOOT_LIMINE_URL ?= https://github.com/Limine-Bootloader/Limine/releases/download/v$(CHAINBOOT_LIMINE_VERSION)/limine-binary.tar.xz
+
+CHAINBOOT_BUILDROOT_VERSION ?= 2026.05
+CHAINBOOT_BUILDROOT_URL ?= https://buildroot.org/downloads/buildroot-$(CHAINBOOT_BUILDROOT_VERSION).tar.xz
+
+.PHONY: all boot image isoroot default clean isoclean buildrootclean cacheclean bindir
 
 default: all
 
@@ -58,15 +63,45 @@ bin/chainboot.efi:
 	@echo "Copying kernel image to EFI boot file"
 	false
 
-BR2_EXTERNAL := $(CURDIR)/buildroot
-
 bin/buildroot.tar.xz: bindir
 	@echo "Downloading Buildroot"
 	@wget -O $@ $(CHAINBOOT_BUILDROOT_URL)
 
+BUILDROOT_ARGS := BR2_EXTERNAL=$(CURDIR)/buildroot
+BUILDROOT_ARGS += BR2_CCACHE_DIR=$(CURDIR)/bin/cache/ccache
+BUILDROOT_ARGS += BR2_DL_DIR=$(CURDIR)/bin/cache/downloads
+BUILDROOT_ARGS += BR2_JLEVEL=$(JOBS)
+BUILDROOT_ARGS += CCACHE_OPTIONS="--max-size=$(CACHE_SIZE)"
+
 bin/buildroot/Makefile: bin/buildroot.tar.xz
 	tar -xf bin/buildroot.tar.xz -C bin
-	mv -f bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) bin/buildroot
+	mkdir -p bin/buildroot
+	mkdir -p bin/cache/ccache
+	mkdir -p bin/cache/downloads
+
+	@$(MAKE) -C bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION) \
+		O=$(CURDIR)/bin/buildroot \
+		$(BUILDROOT_ARGS) \
+		chainboot_defconfig
+
+.PHONY: buildroottoolchain buildroot
+
+buildroottoolchain: bin/buildroot/Makefile
+	@$(MAKE) -C bin/buildroot \
+		$(BUILDROOT_ARGS) \
+		ccache-options
+
+	@$(MAKE) -C bin/buildroot \
+		$(BUILDROOT_ARGS) \
+		toolchain
+
+buildroot: buildroottoolchain
+	@$(MAKE) -C bin/buildroot \
+		$(BUILDROOT_ARGS) \
+		all
+
+cacheclean:
+	rm -rf bin/cache
 
 clean: isoclean buildrootclean
 	rm -f bin/initramfs.cpio
@@ -84,3 +119,4 @@ buildrootclean: bindir
 
 	@test -f bin/buildroot/Makefile && $(MAKE) -C bin/buildroot distclean || true
 	rm -rf bin/buildroot
+	rm -rf bin/buildroot-$(CHAINBOOT_BUILDROOT_VERSION)
