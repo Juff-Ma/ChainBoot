@@ -105,6 +105,8 @@ ChainBoot includes all necessary drivers for LVM to work but without the userspa
 
 This means that systems like Proxmox which utilize LVM cannot boot. (For Proxmox you can go around this by using BTRFS as a filesystem, since it doesn't require LVM and therefore can be booted)
 
+There is a fix for this on the experimental `petitboot` branch, but this is very unstable. Expect booting to fail at least 40% of the time.
+
 Same goes for 3rd party kernel modules. ZFS is such an example since it requires the OpenZFS module which needs to be loaded via the initrd.
 
 ### Only basic bootloader support
@@ -112,3 +114,5 @@ Same goes for 3rd party kernel modules. ZFS is such an example since it requires
 ChainBoot pulls its config from your bootloader (e.g. GRUB) for its own boot menu. Without this you'd need to manually select the kernel path, initrd and cmd line each boot which isn't feasable.
 
 The GRUB parser in LinuxBoot is very basic though and will choke on more complex GRUB configuration files. This isn't a problem for 90% of distros but notably some RedHat family LiveCDs choke on this (the installed OS and netinstall like Fedora Everything work fine).
+
+This is also fixed using the `petitboot` branch. Additionally the current mainline u-root applied fixes to its GRUB parser, so you could built ChainBoot yourself with a non-stable u-root version.
