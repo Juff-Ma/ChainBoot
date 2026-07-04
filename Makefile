@@ -46,7 +46,7 @@ bin/limine-binary/limine: bin/limine.tar.xz
 
 bin/limine.tar.xz: bindir
 	@echo "Downloading Limine binaries"
-	@wget -O bin/limine.tar.xz https://github.com/Limine-Bootloader/Limine/releases/download/v12.3.3/limine-binary.tar.xz
+	@wget -O bin/limine.tar.xz https://github.com/Limine-Bootloader/Limine/releases/download/v12.4.0/limine-binary.tar.xz
 
 bindir:
 	@mkdir -p bin
