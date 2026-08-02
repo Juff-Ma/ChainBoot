@@ -36,15 +36,18 @@ Just a note: even though ChainBoot is more or less a replacement for systems lik
 
 ### My system doesn't support any of this (advanced)
 
-If you really can't put ChainBoot on a local drive (USB/SD Card/etc.) for some reason and still need to use it always remember what was already described: `chainboot.efi` is both an EFI executable and a Linux kernel file!
+If you really can't put ChainBoot on a local drive (USB/SD Card/etc.) for some reason and still need to use it always remember what was already described: `chainboot.efi` is both an EFI executable and a Linux kernel file! Additionally `chainboot.iso` is an ISOHYBRID image, meaning it can be booted both as a CDROM and a hard drive.
 
-If your system has ANY way of booting a Linux kernel (no initrd required) then it can boot ChainBoot.
+If your system has ANY way of booting a Linux kernel (no initrd required), a DVD or a HDD image then it can boot ChainBoot.
 
 Here are a few ideas:
 
 - Is your system a server? Maybe it can boot over iSCSI.
 - Also for servers: IPMI, some of them can permanently store an image.
 - Does your system support PXE or HTTP boot? Use something like [iPXE](https://ipxe.org).
+- The computer doesn't run anything? Clone the image to its drive and then put it back in.
+
+Linux is really really flexible in that regard. There probably exists a way to boot a Linux kernel for every machine that's capable of running it.
 
 ## What are some usecases?
 
